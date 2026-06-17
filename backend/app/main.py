@@ -9,6 +9,8 @@ from app.core.config import settings
 from app.core.redis import init_redis_pool, close_redis_pool, ping
 from app.middlewares.logging_middleware import StructlogMiddleware
 from app.api.v1.auth import router as auth_router
+from app.api.v1.users import router as users_router
+from app.api.v1.jobs import router as jobs_router
 
 logger = structlog.get_logger(__name__)
 
@@ -130,4 +132,5 @@ async def health_check():
 # Register routers
 app.include_router(api_router, prefix="/v1")
 app.include_router(auth_router, prefix="/v1")
-
+app.include_router(users_router, prefix="/v1")
+app.include_router(jobs_router, prefix="/v1")

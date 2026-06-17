@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import String, DateTime, func
-from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
+from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
 
@@ -34,3 +34,12 @@ class User(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+
+    # Relationships
+    profile: Mapped["Profile"] = relationship(  # type: ignore[name-defined]
+        "Profile", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
+    jobs: Mapped[list["Job"]] = relationship(  # type: ignore[name-defined]
+        "Job", back_populates="recruiter", cascade="all, delete-orphan"
+    )
+
