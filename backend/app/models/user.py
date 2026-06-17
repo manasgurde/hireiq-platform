@@ -42,4 +42,8 @@ class User(Base):
     jobs: Mapped[list["Job"]] = relationship(  # type: ignore[name-defined]
         "Job", back_populates="recruiter", cascade="all, delete-orphan"
     )
+    resume: Mapped["Resume"] = relationship(  # type: ignore[name-defined]
+        "Resume", back_populates="candidate", uselist=False, cascade="all, delete-orphan"
+    )
+
 

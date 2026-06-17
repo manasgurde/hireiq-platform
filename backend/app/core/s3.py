@@ -89,3 +89,65 @@ async def upload_avatar(file: UploadFile, user_id: uuid.UUID) -> str:
 
     # Return the public URL
     return f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
+
+
+async def generate_presigned_upload_url(
+    object_name: str, expiration_seconds: int = 3600
+) -> str:
+    """Generate a presigned URL for direct S3 PUT uploads.
+
+    Args:
+        object_name: The S3 key (path) to upload to.
+        expiration_seconds: How long the URL is valid.
+
+    Returns:
+        str: The presigned URL.
+    """
+    if not settings.S3_BUCKET_NAME:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="File storage is not configured.",
+        )
+
+    async with get_s3_client() as s3:
+        presigned_url = await s3.generate_presigned_url(
+            ClientMethod="put_object",
+            Params={
+                "Bucket": settings.S3_BUCKET_NAME,
+                "Key": object_name,
+                "ContentType": "application/pdf",
+            },
+            ExpiresIn=expiration_seconds,
+        )
+        return presigned_url
+
+
+async def get_s3_object_bytes(object_name: str) -> bytes:
+    """Fetch an object from S3 as raw bytes.
+
+    Args:
+        object_name: The S3 key to fetch.
+
+    Returns:
+        bytes: The raw content of the object.
+    """
+    if not settings.S3_BUCKET_NAME:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="File storage is not configured.",
+        )
+
+    try:
+        async with get_s3_client() as s3:
+            response = await s3.get_object(
+                Bucket=settings.S3_BUCKET_NAME, Key=object_name
+            )
+            # aiobotocore uses streaming body, must be awaited/read
+            async with response["Body"] as stream:
+                return await stream.read()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Could not retrieve file from storage: {exc}",
+        ) from exc
+

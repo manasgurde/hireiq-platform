@@ -11,6 +11,8 @@ from app.middlewares.logging_middleware import StructlogMiddleware
 from app.api.v1.auth import router as auth_router
 from app.api.v1.users import router as users_router
 from app.api.v1.jobs import router as jobs_router
+from app.api.v1.resumes import router as resumes_router
+
 
 logger = structlog.get_logger(__name__)
 
@@ -134,3 +136,5 @@ app.include_router(api_router, prefix="/v1")
 app.include_router(auth_router, prefix="/v1")
 app.include_router(users_router, prefix="/v1")
 app.include_router(jobs_router, prefix="/v1")
+app.include_router(resumes_router, prefix="/v1")
+
