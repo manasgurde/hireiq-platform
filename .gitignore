@@ -1,0 +1,27 @@
+# Ignore Python byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Node.js
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Agent configuration
+.agent/
+
+# OS generated files
+.DS_Store
+Thumbs.db

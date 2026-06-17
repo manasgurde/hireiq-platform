@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: hireiq-db
+    environment:
+      POSTGRES_USER: hireiq
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: hireiq_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - hireiq-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hireiq -d hireiq_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: hireiq-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - hireiq-network
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hireiq-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://hireiq:password@db:5432/hireiq_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - hireiq-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hireiq-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - api
+    networks:
+      - hireiq-network
+
+  ai:
+    build:
+      context: ./ai_service
+      dockerfile: Dockerfile
+    container_name: hireiq-ai
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./ai_service:/app
+    networks:
+      - hireiq-network
+
+volumes:
+  pgdata:
+
+networks:
+  hireiq-network:
+    driver: bridge
