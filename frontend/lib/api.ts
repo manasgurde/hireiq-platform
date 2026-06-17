@@ -111,4 +111,59 @@ export const authApi = {
   refreshToken: () => api.post<{ access_token: string }>('/v1/auth/refresh'),
 }
 
+// ---------------------------------------------------------------------------
+// Job types & API
+// ---------------------------------------------------------------------------
+export interface Job {
+  id: string
+  title: string
+  description: string
+  location: string
+  skills: string[]
+  salary_min: number | null
+  salary_max: number | null
+  is_active: boolean
+  recruiter_id: string
+  created_at: string
+  updated_at: string
+}
+
+export interface JobListResponse {
+  items: Job[]
+  total: number
+  page: number
+  limit: number
+  pages: number
+}
+
+export interface JobListParams {
+  q?: string
+  skills?: string[]
+  location?: string
+  min_salary?: number
+  page?: number
+  limit?: number
+}
+
+export const jobsApi = {
+  list: (params: JobListParams = {}) =>
+    api.get<JobListResponse>('/v1/jobs', { params }),
+
+  get: (id: string) =>
+    api.get<Job>(`/v1/jobs/${id}`),
+
+  create: (data: Omit<Job, 'id' | 'recruiter_id' | 'is_active' | 'created_at' | 'updated_at'>) =>
+    api.post<Job>('/v1/jobs', data),
+
+  update: (id: string, data: Partial<Job>) =>
+    api.put<Job>(`/v1/jobs/${id}`, data),
+
+  delete: (id: string) =>
+    api.delete(`/v1/jobs/${id}`),
+
+  close: (id: string) =>
+    api.patch<Job>(`/v1/jobs/${id}/close`),
+}
+
 export default api
+
