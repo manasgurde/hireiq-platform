@@ -10,24 +10,26 @@ Deliver explainable, deterministic, and auditable AI-powered resume intelligence
 
 ## Requirements
 
+The development is divided into 6 sprints containing 60 total backlog tickets, fully detailed in `.planning/REQUIREMENTS.md`.
+
 ### Validated
 
 (None yet — ship to validate)
 
-### Active
+### Active Sprints & Backlog
 
-- [ ] JWT-based Registration, Login, Logout, and Token Refresh with Role Selection (Job Seeker / Recruiter) and bcrypt password hashing
-- [ ] User Profiles module supporting skills, experience, education profile editing, and profile picture upload (up to 2MB)
-- [ ] Job Module supporting full CRUD, keyword search, filter (skills/location/salary), and pagination
-- [ ] Resume Module supporting PDF upload to AWS S3 (up to 5MB), PyMuPDF text extraction, and structured JSON parsing
-- [ ] Application Module supporting applying to jobs, duplicate prevention, and status tracking (applied/shortlisted/rejected)
-- [ ] AI Resume Engine featuring NLP-based spaCy NER extraction of skills, experience, education, and projects
-- [ ] Candidate Scoring Engine using TF-IDF and cosine similarity (0-100 score) with matched and missing skills breakdown
-- [ ] Job Recommendations using content-based filtering (top 5 personalized job recommendations based on user skills)
-- [ ] AI Mock Interview Q&A using Sentence-Transformers (all-MiniLM-L6-v2) for semantic similarity scoring (0-100) and rule-based feedback
-- [ ] Recruiter Dashboard featuring applicant overview, AI score rankings, and hiring analytics charts
-- [ ] Job Seeker Dashboard featuring profile summary, AI score, skill gap analysis, and recommended jobs feed
-- [ ] Admin Panel supporting basic user management, job moderation, and platform analytics
+- **Sprint 1: Foundation & Project Setup** (HIQ-001 to HIQ-010)
+  - Monorepo folder setup, dockerized development services, initial PostgreSQL database migrations, FastAPI app factory, structured logging, Next.js frontend scaffolding, Zustand stores, and GitHub Actions CI.
+- **Sprint 2: Authentication & Security** (HIQ-011 to HIQ-020)
+  - JWT token registration/login/refresh/logout backend APIs, RBAC middleware, sliding window rate limiters, global error handler middleware, and user login/registration Next.js pages.
+- **Sprint 3: User Profiles & Jobs Module** (HIQ-021 to HIQ-030)
+  - User profiles API, S3 avatar upload, profile completion percentage, database models, job creation/close endpoints, paginated job board search (full-text search and skills matching), and job board Next.js interface.
+- **Sprint 4: Resume & Applications Module** (HIQ-031 to HIQ-040)
+  - AWS S3 private bucket, upload resume pre-signed URL API, PyMuPDF parsing utility, async AI triggers, application schema, apply API with 6 checks, seeker history feed, and recruiter candidate ranked listing API.
+- **Sprint 5: AI / ML System** (HIQ-041 to HIQ-050)
+  - Separate FastAPI AI microservice, spaCy NLP skills/experience extraction, TF-IDF cosine similarity candidate scoring, content-based job recommendation engine, SBERT S-Transformers mock interview evaluator, and HTTP client integration with timeouts/fallbacks.
+- **Sprint 6: Dashboards, AI UI & Production Deploy** (HIQ-051 to HIQ-060)
+  - Next.js seeker dashboard (circular score ring, carousel), recruiter dashboard (active jobs table, charts), resume upload interface, application status tracking, AI report details page, mock interview chat UI, recruiter candidate ranked table (slide-in drawer, CSV export), Terraform AWS ECS Fargate deploy, and OWASP Top 10 security audits.
 
 ### Out of Scope
 
@@ -60,7 +62,7 @@ Deliver explainable, deterministic, and auditable AI-powered resume intelligence
 |----------|-----------|---------|
 | Service-Oriented Architecture (SOA) | Separation of Core business API and heavy CPU-bound ML engines | — Pending |
 | TF-IDF & Cosine Similarity | Explainable, deterministic candidate-to-job matching score | — Pending |
-| dual-token auth strategy | Opaque refresh tokens stored in Redis + short-lived JWTs for security | — Pending |
+| Dual-token Auth Strategy | Opaque refresh tokens stored in Redis + short-lived JWTs for security | — Pending |
 | S3 Pre-signed Upload URLs | Prevents file processing bottlenecks at the API gateway level | — Pending |
 
 ## Evolution
