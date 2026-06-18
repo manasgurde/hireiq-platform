@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import CandidatesTable from "@/components/recruiter/CandidatesTable";
+import AnalyticsDashboard from "@/components/recruiter/AnalyticsDashboard";
 
 // Hardcoded for the MVP demonstration purposes.
 // In a full implementation, you'd fetch the recruiter's active jobs list.
@@ -34,6 +35,8 @@ export default function RecruiterDashboard() {
             />
           </div>
         </header>
+
+        <AnalyticsDashboard />
 
         <div className="grid grid-cols-1 gap-8">
           {/* Main Candidates Table view */}
