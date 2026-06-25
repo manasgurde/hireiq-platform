@@ -5,12 +5,24 @@ from pydantic import BaseModel, computed_field
 class ProfileUpdate(BaseModel):
     bio: Optional[str] = None
     skills: Optional[List[str]] = None
+    full_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    location: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    github_url: Optional[str] = None
 
 
 class ProfileResponse(BaseModel):
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
     skills: List[str] = []
+    phone_number: Optional[str] = None
+    location: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    github_url: Optional[str] = None
+    full_name: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

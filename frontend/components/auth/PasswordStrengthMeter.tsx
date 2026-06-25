@@ -1,25 +1,14 @@
 'use client'
 
 import { useMemo } from 'react'
-import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core'
-import * as zxcvbnCommon from '@zxcvbn-ts/language-common'
-
-// Configure zxcvbn once
-zxcvbnOptions.setOptions({
-  translations: zxcvbnCommon.translations,
-  graphs: zxcvbnCommon.adjacencyGraphs,
-  dictionary: {
-    ...zxcvbnCommon.dictionary,
-  },
-})
 
 const STRENGTH_LABELS = ['', 'Weak', 'Fair', 'Good', 'Strong']
 const STRENGTH_COLORS = [
-  'bg-slate-700',      // 0 — no input
-  'bg-red-500',        // 1 — Weak
-  'bg-orange-400',     // 2 — Fair
-  'bg-yellow-400',     // 3 — Good
-  'bg-emerald-500',    // 4 — Strong
+  'bg-slate-700',      // 0 ? no input
+  'bg-red-500',        // 1 ? Weak
+  'bg-orange-400',     // 2 ? Fair
+  'bg-yellow-400',     // 3 ? Good
+  'bg-emerald-500',    // 4 ? Strong
 ]
 const STRENGTH_TEXT_COLORS = [
   'text-slate-500',
@@ -34,12 +23,16 @@ interface Props {
 }
 
 export default function PasswordStrengthMeter({ password }: Props) {
-  const result = useMemo(() => {
-    if (!password) return null
-    return zxcvbn(password)
+  const score = useMemo(() => {
+    if (!password) return 0
+    let s = 0
+    if (password.length > 7) s += 1
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) s += 1
+    if (/[0-9]/.test(password)) s += 1
+    if (/[^a-zA-Z0-9]/.test(password)) s += 1
+    return Math.min(4, Math.max(1, s))
   }, [password])
 
-  const score = result?.score ?? 0
   const label = password ? STRENGTH_LABELS[score] : ''
 
   return (

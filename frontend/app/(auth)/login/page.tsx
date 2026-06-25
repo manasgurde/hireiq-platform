@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react'
 import { authApi } from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton'
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -46,7 +47,10 @@ export default function LoginPage() {
         { id: res.data.user.id, email: res.data.user.email, role: res.data.user.role as 'candidate' | 'recruiter' | 'admin' },
         res.data.access_token
       )
-      router.push('/dashboard')
+      const role = res.data.user.role as string;
+      if (role === 'recruiter') router.push('/recruiter/dashboard');
+      else if (role === 'admin') router.push('/admin/analytics');
+      else router.push('/candidate/dashboard');
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: { message?: string } } } }
       setApiError(
@@ -72,6 +76,20 @@ export default function LoginPage() {
           <p className="text-sm">{apiError}</p>
         </div>
       )}
+
+      {/* Google Sign-In */}
+      <div className="mb-6">
+        <GoogleSignInButton text="Sign in with Google" />
+      </div>
+
+      <div className="relative mb-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-800"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-slate-950 text-slate-500">Or continue with email</span>
+        </div>
+      </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>

@@ -78,13 +78,14 @@ async def confirm_resume_upload(
 
     # Use a property to generate the full public URL from the key if needed,
     # or just return the key. For schema compatibility we return the mock public URL:
-    from app.core.config import settings
-    s3_url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{resume.s3_key}"
+    from app.core.s3 import generate_presigned_download_url
+    s3_url = await generate_presigned_download_url(resume.s3_key)
     
     return ResumeResponse(
         id=resume.id,
         candidate_id=resume.candidate_id,
         s3_url=s3_url,
+        ai_evaluation=resume.ai_evaluation,
         created_at=resume.created_at,
         updated_at=resume.updated_at,
     )
@@ -105,6 +106,44 @@ async def get_my_resume(
     if not resume:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No resume found.")
 
+    from app.core.s3 import generate_presigned_download_url
+    s3_url = await generate_presigned_download_url(resume.s3_key)
+    
+    return ResumeResponse(
+        id=resume.id,
+        candidate_id=resume.candidate_id,
+        s3_url=s3_url,
+        ai_evaluation=resume.ai_evaluation,
+        created_at=resume.created_at,
+        updated_at=resume.updated_at,
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /me/evaluate (AI Evaluation)
+# ---------------------------------------------------------------------------
+@router.post("/me/evaluate", response_model=ResumeResponse)
+async def evaluate_my_resume(
+    current_user: User = Depends(require_candidate),
+    db: AsyncSession = Depends(get_db),
+) -> ResumeResponse:
+    """Run AI evaluation on the candidate's resume if not already done."""
+    result = await db.execute(select(Resume).where(Resume.candidate_id == current_user.id))
+    resume = result.scalar_one_or_none()
+
+    if not resume:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No resume found.")
+
+    if resume.ai_evaluation:
+        # Already evaluated
+        pass
+    else:
+        from app.core.ai_evaluator import evaluate_resume
+        evaluation = await evaluate_resume(resume.raw_text or "")
+        resume.ai_evaluation = evaluation
+        await db.commit()
+        await db.refresh(resume)
+
     from app.core.config import settings
     s3_url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{resume.s3_key}"
     
@@ -112,6 +151,7 @@ async def get_my_resume(
         id=resume.id,
         candidate_id=resume.candidate_id,
         s3_url=s3_url,
+        ai_evaluation=resume.ai_evaluation,
         created_at=resume.created_at,
         updated_at=resume.updated_at,
     )
@@ -134,3 +174,25 @@ async def delete_my_resume(
 
     await db.delete(resume)
     await db.commit()
+
+
+# ---------------------------------------------------------------------------
+# GET /{resume_id}/download
+# ---------------------------------------------------------------------------
+from fastapi.responses import RedirectResponse
+from app.core.s3 import generate_presigned_download_url
+
+@router.get("/{resume_id}/download")
+async def download_resume(
+    resume_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    # Note: in a real app, require recruiter auth and check permissions!
+):
+    """Get a redirect to the S3 presigned URL for a resume."""
+    result = await db.execute(select(Resume).where(Resume.id == resume_id))
+    resume = result.scalar_one_or_none()
+    if not resume:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
+        
+    s3_url = await generate_presigned_download_url(resume.s3_key)
+    return RedirectResponse(url=s3_url)

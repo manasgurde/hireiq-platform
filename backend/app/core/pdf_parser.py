@@ -1,13 +1,13 @@
+import io
+import PyPDF2
 import anyio
-import fitz  # PyMuPDF
 import structlog
 from fastapi import HTTPException, status
 
 logger = structlog.get_logger(__name__)
 
-
 def extract_pdf_text_from_bytes_sync(pdf_bytes: bytes) -> str:
-    """Synchronously extract text from a PDF memory buffer using PyMuPDF.
+    """Synchronously extract text from a PDF memory buffer using PyPDF2.
 
     Args:
         pdf_bytes: The raw bytes of the PDF file.
@@ -16,10 +16,8 @@ def extract_pdf_text_from_bytes_sync(pdf_bytes: bytes) -> str:
         str: Extracted raw text.
     """
     try:
-        # Open the document from memory
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-        text_content = [page.get_text() for page in doc]
-        doc.close()
+        reader = PyPDF2.PdfReader(io.BytesIO(pdf_bytes))
+        text_content = [page.extract_text() for page in reader.pages if page.extract_text()]
         return "\n".join(text_content).strip()
     except Exception as exc:
         logger.error("pdf_extraction_failed", error=str(exc))

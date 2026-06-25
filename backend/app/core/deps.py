@@ -83,7 +83,7 @@ class RoleChecker:
 
 # Pre-built role dependency shortcuts
 require_recruiter = RoleChecker(["recruiter", "admin"])
-require_candidate = RoleChecker(["candidate", "admin"])
+require_candidate = RoleChecker(["candidate", "recruiter", "admin"])
 require_admin = RoleChecker(["admin"])
 
 

@@ -3,24 +3,26 @@ from logging.config import fileConfig
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy.ext.asyncio import async_engine_from_config, create_async_engine
 
 from alembic import context
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
+from app.core.config import settings
+from app.models import *
+from app.models.user import Base
+
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = None
+# Use direct (non-pooled) Supabase URL for migrations to bypass pgbouncer.
+# Falls back to DATABASE_URL if DIRECT_DATABASE_URL is not set.
+direct_url = getattr(settings, "DIRECT_DATABASE_URL", None) or settings.DATABASE_URL
+escaped_url = direct_url.replace("%", "%%")
+config.set_main_option("sqlalchemy.url", escaped_url)
+
+target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -52,15 +54,15 @@ def do_run_migrations(connection: Connection) -> None:
         context.run_migrations()
 
 async def run_async_migrations() -> None:
-    """In this scenario we need to create an Engine
-    and associate a connection with the context.
+    """Create engine with statement_cache_size=0 for pgbouncer compatibility."""
+    # statement_cache_size=0 is required when connecting through Supabase's
+    # pgbouncer transaction-mode pooler.
+    direct_url = getattr(settings, "DIRECT_DATABASE_URL", None) or settings.DATABASE_URL
 
-    """
-
-    connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+    connectable = create_async_engine(
+        direct_url,
         poolclass=pool.NullPool,
+        connect_args={"statement_cache_size": 0},
     )
 
     async with connectable.connect() as connection:

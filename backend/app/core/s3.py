@@ -24,7 +24,8 @@ _s3_session = aioboto3.Session(
 async def get_s3_client():
     """Context manager that yields an async S3 client."""
     s3_config = Config(signature_version="s3v4")
-    async with _s3_session.client("s3", config=s3_config) as client:
+    endpoint = f"https://s3.{settings.AWS_REGION}.amazonaws.com" if settings.AWS_REGION else None
+    async with _s3_session.client("s3", config=s3_config, endpoint_url=endpoint) as client:
         yield client
 
 
@@ -150,4 +151,34 @@ async def get_s3_object_bytes(object_name: str) -> bytes:
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Could not retrieve file from storage: {exc}",
         ) from exc
+
+
+async def generate_presigned_download_url(
+    object_name: str, expiration_seconds: int = 3600
+) -> str:
+    """Generate a presigned URL for direct S3 GET downloads.
+
+    Args:
+        object_name: The S3 key (path) to download.
+        expiration_seconds: How long the URL is valid.
+
+    Returns:
+        str: The presigned URL.
+    """
+    if not settings.S3_BUCKET_NAME:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="File storage is not configured.",
+        )
+
+    async with get_s3_client() as s3:
+        presigned_url = await s3.generate_presigned_url(
+            ClientMethod="get_object",
+            Params={
+                "Bucket": settings.S3_BUCKET_NAME,
+                "Key": object_name,
+            },
+            ExpiresIn=expiration_seconds,
+        )
+        return presigned_url
 

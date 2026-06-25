@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, Bot, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/store/authStore";
+import { applicationsApi } from "@/lib/api";
 
 interface Message {
   id: string;
@@ -51,24 +53,14 @@ export default function AIChatInterface({ applicationId, onScoreUpdated, onCompl
 
     try {
       // Evaluate answer via Core API -> AI Microservice
-      const token = localStorage.getItem("hireiq_token");
-      const res = await fetch("http://localhost:8000/api/v1/applications/evaluate-answer", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          application_id: applicationId,
-          candidate_answer: userText,
-          // Normally the backend retrieves the ideal answer based on the job posting and question context.
-          ideal_answer: "I analyze the execution plan, add missing indexes, rewrite the query to avoid N+1 problems, and cache the results."
-        })
-      });
+      const res = await applicationsApi.evaluateAnswer(
+        applicationId,
+        userText,
+        "I analyze the execution plan, add missing indexes, rewrite the query to avoid N+1 problems, and cache the results."
+      );
 
-      if (res.ok) {
-        const data = await res.json();
-        onScoreUpdated(data.semantic_score); // Update parent UI with live score
+      if (res.data) {
+        onScoreUpdated(res.data.semantic_score); // Update parent UI with live score
       }
     } catch (err) {
       console.error("Evaluation failed", err);

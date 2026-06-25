@@ -21,8 +21,9 @@ from app.core.redis import (
     delete_refresh_token,
 )
 from app.models.user import User
-from app.schemas.auth import RegisterRequest, LoginRequest, AuthResponse, TokenResponse, UserOut
-
+from app.schemas.auth import RegisterRequest, LoginRequest, AuthResponse, TokenResponse, UserOut, GoogleLoginRequest
+from app.core.config import settings
+import secrets
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 REFRESH_COOKIE_NAME = "refresh_token"
@@ -123,6 +124,80 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
         )
+
+    # Create tokens
+    access_token = create_access_token(data={"sub": str(user.id)})
+    refresh_token, jti, family_id = create_refresh_token(user_id=str(user.id))
+
+    # Store RT and set cookie
+    await store_refresh_token(jti=jti, user_id=str(user.id), family_id=family_id)
+    _set_refresh_cookie(response, refresh_token)
+
+    return AuthResponse(
+        access_token=access_token,
+        user=UserOut.model_validate(user),
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /auth/google
+# ---------------------------------------------------------------------------
+@router.post("/google", response_model=AuthResponse)
+async def google_login(
+    body: GoogleLoginRequest,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+) -> AuthResponse:
+    if not settings.GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="Google Sign-In is not configured on the server."
+        )
+
+    try:
+        import httpx
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {body.token}"}
+            )
+            if resp.status_code != 200:
+                raise ValueError("Invalid access token")
+            idinfo = resp.json()
+            
+        email = idinfo.get("email")
+        if not email:
+            raise ValueError("Token didn't contain an email.")
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid Google token: {exc}"
+        )
+
+    # Check if user exists
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        # Create new user
+        # Generate a random strong password hash
+        random_pwd = secrets.token_urlsafe(32)
+        hashed_pwd = hash_password(random_pwd)
+        
+        user = User(
+            email=email,
+            password_hash=hashed_pwd,
+            role=body.role,
+            full_name=idinfo.get("name")
+        )
+        db.add(user)
+        await db.flush()
+        # Create an empty profile for the new user
+        from app.models.profile import Profile
+        new_profile = Profile(id=user.id, avatar_url=idinfo.get("picture"))
+        db.add(new_profile)
+        await db.commit()
+        await db.refresh(user)
 
     # Create tokens
     access_token = create_access_token(data={"sub": str(user.id)})

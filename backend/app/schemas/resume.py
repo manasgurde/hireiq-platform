@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
-from pydantic import BaseModel
+from typing import Dict, Any, Optional
+from pydantic import BaseModel, ConfigDict
 
 
 class ResumeUploadUrlResponse(BaseModel):
@@ -16,6 +17,7 @@ class ResumeResponse(BaseModel):
     id: uuid.UUID
     candidate_id: uuid.UUID
     s3_url: str
+    ai_evaluation: Optional[Dict[str, Any]] = None
     # Omit raw_text by default to keep responses lightweight
     created_at: datetime
     updated_at: datetime

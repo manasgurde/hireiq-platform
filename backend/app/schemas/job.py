@@ -12,6 +12,8 @@ class JobCreate(BaseModel):
     skills: List[str] = Field(default=[])
     salary_min: Optional[Decimal] = None
     salary_max: Optional[Decimal] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
 
 
 class JobUpdate(BaseModel):
@@ -21,6 +23,8 @@ class JobUpdate(BaseModel):
     skills: Optional[List[str]] = None
     salary_min: Optional[Decimal] = None
     salary_max: Optional[Decimal] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
 
 
 class JobResponse(BaseModel):
@@ -33,8 +37,14 @@ class JobResponse(BaseModel):
     salary_max: Optional[Decimal] = None
     is_active: bool
     recruiter_id: uuid.UUID
+    application_count: int = 0
+    hired_count: int = 0
+    rejected_count: int = 0
+    interview_count: int = 0
     created_at: datetime
     updated_at: datetime
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 

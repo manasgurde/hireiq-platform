@@ -13,6 +13,15 @@ from app.api.v1.users import router as users_router
 from app.api.v1.jobs import router as jobs_router
 from app.api.v1.resumes import router as resumes_router
 from app.api.v1.applications import router as applications_router
+# v2.0 routers
+from app.api.v1.search import router as search_router
+from app.api.v1.recruiter_intel import router as recruiter_intel_router
+from app.api.v1.companies import router as companies_router
+from app.api.v1.notifications import router as notifications_router
+from app.api.v1.billing import router as billing_router
+from app.api.v1.audit import router as audit_router
+from app.api.v1.analytics import router as analytics_router
+from app.api.v1.ml_ops import router as ml_ops_router
 
 
 
@@ -50,7 +59,7 @@ app = FastAPI(
 # ---------------------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[settings.FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -133,12 +142,22 @@ async def health_check():
     }
 
 
-# Register routers
+# Register routers — v1 core
 app.include_router(api_router, prefix="/v1")
 app.include_router(auth_router, prefix="/v1")
 app.include_router(users_router, prefix="/v1")
 app.include_router(jobs_router, prefix="/v1")
 app.include_router(resumes_router, prefix="/v1")
 app.include_router(applications_router, prefix="/v1")
+
+# Register routers — v2.0 features
+app.include_router(search_router, prefix="/v1")
+app.include_router(recruiter_intel_router, prefix="/v1")
+app.include_router(companies_router, prefix="/v1")
+app.include_router(notifications_router, prefix="/v1")
+app.include_router(billing_router, prefix="/v1")
+app.include_router(audit_router, prefix="/v1")
+app.include_router(analytics_router, prefix="/v1")
+app.include_router(ml_ops_router, prefix="/v1")
 
 

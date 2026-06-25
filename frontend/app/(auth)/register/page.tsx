@@ -10,6 +10,7 @@ import { Eye, EyeOff, Loader2, AlertCircle, ChevronLeft, Briefcase, UserCircle }
 import { authApi } from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import PasswordStrengthMeter from '@/components/auth/PasswordStrengthMeter'
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton'
 
 // ---------------------------------------------------------------------------
 // Schema (Step 2)
@@ -96,7 +97,10 @@ export default function RegisterPage() {
         { id: res.data.user.id, email: res.data.user.email, role: res.data.user.role as 'candidate' | 'recruiter' | 'admin' },
         res.data.access_token
       )
-      router.push('/dashboard')
+      const role = res.data.user.role as string;
+      if (role === 'recruiter') router.push('/recruiter/dashboard');
+      else if (role === 'admin') router.push('/admin/analytics');
+      else router.push('/candidate/dashboard');
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: { message?: string } } } }
       setApiError(
@@ -220,6 +224,20 @@ export default function RegisterPage() {
               <p className="text-sm">{apiError}</p>
             </div>
           )}
+
+          {/* Google Sign-In */}
+          <div className="mb-6">
+            <GoogleSignInButton text="Sign up with Google" role={selectedRole || undefined} />
+          </div>
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-800"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-slate-950 text-slate-500">Or register with email</span>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
             {/* Name */}

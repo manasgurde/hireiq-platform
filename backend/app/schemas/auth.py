@@ -28,6 +28,10 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+class GoogleLoginRequest(BaseModel):
+    token: str
+    role: str = "candidate"
+
 
 class TokenResponse(BaseModel):
     access_token: str

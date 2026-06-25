@@ -23,6 +23,7 @@ class User(Base):
         nullable=False,
         index=True,
     )
+    full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(50), nullable=False, default="candidate")
     created_at: Mapped[datetime] = mapped_column(

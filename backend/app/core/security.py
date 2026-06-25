@@ -4,29 +4,31 @@ from typing import Any
 
 import jwt
 from fastapi import HTTPException, status
-from passlib.context import CryptContext
+import bcrypt
 
 from app.core.config import settings
 
 # ---------------------------------------------------------------------------
 # Password hashing — bcrypt with 12 rounds
 # ---------------------------------------------------------------------------
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
 
 # Pre-computed dummy hash for timing-attack resistance on login
 # This is computed once at module load so the cost is only paid once.
-DUMMY_HASH: str = pwd_context.hash("dummy_timing_protection_password_hireiq_x1!")
+DUMMY_HASH: str = bcrypt.hashpw(b"dummy", bcrypt.gensalt(rounds=12)).decode()
 
 
 def hash_password(password: str) -> str:
     """Hash a plain-text password with bcrypt (rounds=12)."""
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
     """Verify a plain-text password against its hash. Always runs bcrypt
     verification — even when called with DUMMY_HASH — to prevent timing attacks."""
-    return pwd_context.verify(plain, hashed)
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except Exception:
+        return False
 
 
 # ---------------------------------------------------------------------------

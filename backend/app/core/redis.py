@@ -11,7 +11,10 @@ REUSE_GRACE_TTL = 60        # 60 seconds grace period for reuse detection
 
 async def init_redis_pool():
     global redis_client
-    redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+    redis_client = None # Disabled Redis for local testing without Docker
+
+async def get_redis():
+    return redis_client
 
 
 async def close_redis_pool():

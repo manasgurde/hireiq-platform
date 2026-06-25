@@ -17,7 +17,7 @@ async def _get_or_create_profile(user: User, db: AsyncSession) -> Profile:
     result = await db.execute(select(Profile).where(Profile.id == user.id))
     profile = result.scalar_one_or_none()
     if not profile:
-        profile = Profile(id=user.id, bio=None, avatar_url=None, skills=[])
+        profile = Profile(id=user.id, bio=None, avatar_url=None, skills=[], phone_number=None, location=None)
         db.add(profile)
         await db.commit()
         await db.refresh(profile)
@@ -33,7 +33,9 @@ async def get_profile(
     db: AsyncSession = Depends(get_db),
 ) -> ProfileResponse:
     profile = await _get_or_create_profile(current_user, db)
-    return ProfileResponse.model_validate(profile)
+    resp = ProfileResponse.model_validate(profile)
+    resp.full_name = current_user.full_name
+    return resp
 
 
 # ---------------------------------------------------------------------------
@@ -51,10 +53,29 @@ async def update_profile(
         profile.bio = body.bio
     if body.skills is not None:
         profile.skills = body.skills
+    if body.phone_number is not None:
+        profile.phone_number = body.phone_number
+    if body.location is not None:
+        profile.location = body.location
+    if body.date_of_birth is not None:
+        profile.date_of_birth = body.date_of_birth
+    if body.linkedin_url is not None:
+        profile.linkedin_url = body.linkedin_url
+    if body.github_url is not None:
+        profile.github_url = body.github_url
+        
+    if body.full_name is not None:
+        current_user.full_name = body.full_name
 
     await db.commit()
     await db.refresh(profile)
-    return ProfileResponse.model_validate(profile)
+    await db.refresh(current_user)
+    
+    # We should return a dict or object that matches ProfileResponse, but Profile doesn't have full_name.
+    # ProfileResponse only cares about Profile fields.
+    resp = ProfileResponse.model_validate(profile)
+    resp.full_name = current_user.full_name
+    return resp
 
 
 # ---------------------------------------------------------------------------

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Clock, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Application {
   id: string;
@@ -19,14 +20,9 @@ export default function ApplicationStatusTracker() {
   useEffect(() => {
     async function fetchApps() {
       try {
-        const token = localStorage.getItem("hireiq_token");
-        const res = await fetch("http://localhost:8000/api/v1/applications/my", {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setApplications(data);
-        }
+        const { default: api } = await import('@/lib/api');
+        const res = await api.get("/v1/applications/me");
+        setApplications(res.data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -66,7 +62,18 @@ export default function ApplicationStatusTracker() {
   };
 
   if (loading) {
-    return <div className="animate-pulse bg-slate-800 rounded-xl h-64 w-full"></div>;
+    return (
+      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+        <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+          <Skeleton className="h-7 w-48 bg-slate-800" />
+        </div>
+        <div className="p-6 space-y-4">
+          <Skeleton className="h-12 w-full bg-slate-800" />
+          <Skeleton className="h-12 w-full bg-slate-800" />
+          <Skeleton className="h-12 w-full bg-slate-800" />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -77,7 +84,10 @@ export default function ApplicationStatusTracker() {
       
       {applications.length === 0 ? (
         <div className="p-12 text-center text-slate-400">
-          <p>You haven't applied to any jobs yet.</p>
+          <p className="mb-4">You haven't applied to any jobs yet.</p>
+          <Link href="/jobs" className="inline-flex items-center text-indigo-400 hover:text-indigo-300 font-medium">
+            Find your first opportunity <ArrowRight className="w-4 h-4 ml-1" />
+          </Link>
         </div>
       ) : (
         <div className="overflow-x-auto">

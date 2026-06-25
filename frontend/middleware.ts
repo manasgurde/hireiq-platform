@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const PROTECTED_PATHS = ['/dashboard', '/recruiter', '/profile', '/jobs/apply']
+const PROTECTED_PATHS = ['/dashboard', '/recruiter', '/candidate', '/profile', '/messages', '/jobs/apply']
 const AUTH_PATHS = ['/login', '/register']
 
 export function middleware(request: NextRequest) {
@@ -22,9 +22,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (isAuthPath && isLoggedIn) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
+  // If user explicitly visits /login or /register, allow them to sign in as a different user
+  // without redirecting them to the dashboard automatically.
+  // if (isAuthPath && isLoggedIn) {
+  //   return NextResponse.redirect(new URL('/dashboard', request.url))
+  // }
 
   return NextResponse.next()
 }

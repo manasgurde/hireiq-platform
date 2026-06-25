@@ -3,10 +3,21 @@ import { useAuthStore } from '@/store/authStore'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_BASE,
   withCredentials: true, // Sends httpOnly cookies automatically
   headers: { 'Content-Type': 'application/json' },
+})
+
+// ---------------------------------------------------------------------------
+// Request interceptor: attach token
+// ---------------------------------------------------------------------------
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().accessToken
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
 })
 
 // ---------------------------------------------------------------------------
@@ -27,6 +38,10 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
+
+    if (originalRequest.url?.includes('/auth/refresh')) {
+      return Promise.reject(error)
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
@@ -106,9 +121,54 @@ export const authApi = {
   login: (data: LoginRequest) =>
     api.post<AuthResponse>('/v1/auth/login', data),
 
+  googleLogin: (token: string, role?: string) => 
+    api.post<AuthResponse>('/v1/auth/google', { token, role }),
+
   logout: () => api.post('/v1/auth/logout'),
 
   refreshToken: () => api.post<{ access_token: string }>('/v1/auth/refresh'),
+}
+
+export interface Resume {
+  id: string
+  candidate_id: string
+  s3_url: string
+  ai_evaluation?: {
+    rating: number;
+    good_points: string[];
+    bad_points: string[];
+    suggestions: string[];
+    extracted_skills?: string[];
+    candidate_name?: string;
+  } | null
+  created_at: string
+}
+
+export const resumesApi = {
+  getUploadUrl: () => api.post('/v1/resumes/upload-url'),
+  confirmUpload: (s3_key: string) => api.post('/v1/resumes/confirm', { s3_key }),
+  getMine: () => api.get<Resume>('/v1/resumes/me'),
+  evaluate: () => api.post<Resume>('/v1/resumes/me/evaluate'),
+  delete: () => api.delete('/v1/resumes/me'),
+}
+
+export interface Profile {
+  bio?: string | null
+  avatar_url?: string | null
+  skills: string[]
+  phone_number?: string | null
+  location?: string | null
+  date_of_birth?: string | null
+  linkedin_url?: string | null
+  github_url?: string | null
+  full_name?: string | null
+  completion_percentage?: number
+}
+
+export const usersApi = {
+  getProfile: () => api.get<Profile>('/v1/users/profile'),
+  updateProfile: (data: Partial<Profile>) => api.put<Profile>('/v1/users/profile', data),
+  uploadAvatar: (formData: FormData) => api.post<Profile>('/v1/users/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
 }
 
 // ---------------------------------------------------------------------------
@@ -124,6 +184,7 @@ export interface Job {
   salary_max: number | null
   is_active: boolean
   recruiter_id: string
+  application_count?: number
   created_at: string
   updated_at: string
 }
@@ -143,6 +204,7 @@ export interface JobListParams {
   min_salary?: number
   page?: number
   limit?: number
+  recruiter_id?: string
 }
 
 export const jobsApi = {
@@ -165,5 +227,39 @@ export const jobsApi = {
     api.patch<Job>(`/v1/jobs/${id}/close`),
 }
 
-export default api
+export const applicationsApi = {
+  listMine: () =>
+    api.get<any[]>('/v1/applications/me'),
 
+  listByJob: (jobId: string) =>
+    api.get(`/v1/applications/job/${jobId}`),
+
+  listAllForRecruiter: () =>
+    api.get('/v1/applications/recruiter/all'),
+
+  apply: (jobId: string) =>
+    api.post('/v1/applications/', { job_id: jobId }),
+
+  updateStatus: (appId: string, status: string) =>
+    api.patch(`/v1/applications/${appId}/status`, { status }),
+
+  evaluateAnswer: (applicationId: string, answer: string, idealAnswer: string) =>
+    api.post(`/v1/applications/evaluate-answer`, {
+      application_id: applicationId,
+      candidate_answer: answer,
+      ideal_answer: idealAnswer,
+    }),
+}
+
+export const analyticsApi = {
+  getFunnel: (jobId?: string) =>
+    api.get(`/v1/analytics/funnel`, { params: jobId ? { job_id: jobId } : {} }),
+  getTimeToHire: () =>
+    api.get(`/v1/analytics/time-to-hire`),
+  getRecruiterPerformance: () =>
+    api.get(`/v1/analytics/recruiter-performance`),
+  getPlatform: () =>
+    api.get(`/v1/analytics/platform`),
+}
+
+export default api

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import GoogleProvider from '@/components/auth/GoogleProvider';
 
 export const metadata: Metadata = {
   title: 'HireIQ — Sign In',
@@ -23,9 +24,7 @@ export default function AuthLayout({
         {/* Logo */}
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
-              <span className="text-white font-bold text-lg">H</span>
-            </div>
+            <img src="/logo.png" alt="HireIQ Logo" className="h-10 w-10 object-contain" />
             <span className="text-white text-2xl font-bold tracking-tight">HireIQ</span>
           </div>
         </div>
@@ -66,13 +65,13 @@ export default function AuthLayout({
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
-              <span className="text-white font-bold">H</span>
-            </div>
+          <div className="flex items-center gap-3 mb-8 lg:hidden">
+            <img src="/logo.png" alt="HireIQ Logo" className="h-8 w-8 object-contain" />
             <span className="text-white text-xl font-bold">HireIQ</span>
           </div>
-          {children}
+          <GoogleProvider>
+            {children}
+          </GoogleProvider>
         </div>
       </div>
     </div>

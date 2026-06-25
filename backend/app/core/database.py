@@ -8,6 +8,12 @@ engine = create_async_engine(
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
+    # Required for Supabase pgbouncer in transaction-mode pooling
+    connect_args={
+        "server_settings": {"jit": "off"},
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0,
+    },
 )
 
 AsyncSessionLocal = async_sessionmaker(

@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UploadCloud, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function ResumeUploader() {
+interface Props {
+  onUploadSuccess?: (resume: any) => void;
+}
+
+export default function ResumeUploader({ onUploadSuccess }: Props = {}) {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(60);
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -22,42 +28,55 @@ export default function ResumeUploader() {
   const handleUpload = async () => {
     if (!file) return;
     setStatus("uploading");
+    setErrorMsg(null);
+    setTimeLeft(60);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 1 minute timeout
+    const intervalId = setInterval(() => {
+      setTimeLeft((prev) => prev > 0 ? prev - 1 : 0);
+    }, 1000);
     
     try {
       // 1. Get presigned URL from core API
-      const token = localStorage.getItem("hireiq_token");
-      const presignRes = await fetch("http://localhost:8000/api/v1/resumes/upload-url", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ filename: file.name, content_type: file.type })
-      });
+      const { default: api } = await import('@/lib/api');
       
-      if (!presignRes.ok) throw new Error("Failed to get presigned URL");
-      const { upload_url, s3_key, resume_id } = await presignRes.json();
+      const presignRes = await api.post('/v1/resumes/upload-url', undefined, {
+        signal: controller.signal
+      });
+      const { upload_url, s3_key } = presignRes.data;
 
       // 2. Upload to S3 directly
       const s3Res = await fetch(upload_url, {
         method: "PUT",
         headers: { "Content-Type": file.type },
         body: file,
+        signal: controller.signal
       });
 
       if (!s3Res.ok) throw new Error("Failed to upload to S3");
 
       // 3. Confirm with core API
-      const confirmRes = await fetch(`http://localhost:8000/api/v1/resumes/confirm/${resume_id}`, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${token}` }
+      const confirmRes = await api.post('/v1/resumes/confirm', { s3_key }, {
+        signal: controller.signal
       });
-
-      if (!confirmRes.ok) throw new Error("Failed to parse resume");
       
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
       setStatus("success");
-    } catch (err) {
+      if (onUploadSuccess) onUploadSuccess(confirmRes.data);
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
       console.error("Upload error", err);
+      
+      if (err.name === 'AbortError' || err.name === 'CanceledError' || err.code === 'ECONNABORTED') {
+        setErrorMsg("Upload timed out after 1 minute. Please try again.");
+      } else if (err.response?.data?.error?.message || err.response?.data?.error?.detail) {
+        setErrorMsg(err.response.data.error.message || err.response.data.error.detail);
+      } else {
+        setErrorMsg(err.message || "An unknown error occurred.");
+      }
       setStatus("error");
     }
   };
@@ -86,6 +105,9 @@ export default function ResumeUploader() {
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
               <p className="text-indigo-300 font-medium">Uploading and parsing with AI...</p>
+              <p className="text-indigo-400 text-sm mt-2 font-mono">
+                Timeout in: 00:{timeLeft.toString().padStart(2, '0')}
+              </p>
             </div>
           ) : (
             <div className="flex flex-col items-center cursor-pointer">
@@ -130,7 +152,7 @@ export default function ResumeUploader() {
           {status === "error" && (
             <div className="mt-4 flex items-center justify-center text-red-400 text-sm">
               <AlertCircle className="w-4 h-4 mr-2" />
-              There was an error uploading. Please try again.
+              {errorMsg || "There was an error uploading. Please try again."}
             </div>
           )}
         </div>

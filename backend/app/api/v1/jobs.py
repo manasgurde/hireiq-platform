@@ -12,8 +12,10 @@ from app.core.database import get_db
 from app.core.deps import get_current_user, require_recruiter
 from app.core.redis import redis_client
 from app.models.job import Job
+from app.models.application import Application
 from app.models.user import User
 from app.schemas.job import JobCreate, JobUpdate, JobResponse, JobListResponse
+from sqlalchemy import select, func, and_, case
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
@@ -93,13 +95,14 @@ async def list_jobs(
     skills: Optional[List[str]] = Query(None, description="Required skills (all must match)"),
     location: Optional[str] = Query(None),
     min_salary: Optional[int] = Query(None),
+    recruiter_id: Optional[uuid.UUID] = Query(None, description="Filter by recruiter ID"),
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ) -> JobListResponse:
     cache_params = {
         "q": q, "skills": skills, "location": location,
-        "min_salary": min_salary, "page": page, "limit": limit,
+        "min_salary": min_salary, "recruiter_id": recruiter_id, "page": page, "limit": limit,
     }
     version = await _get_jobs_version()
     cache_key = _make_cache_key(cache_params, version)
@@ -111,7 +114,9 @@ async def list_jobs(
             return JobListResponse.model_validate_json(cached)
 
     # Build query filters
-    filters = [Job.is_deleted == False, Job.is_active == True]  # noqa: E712
+    filters = [Job.is_deleted == False]  # noqa: E712
+    if not recruiter_id:
+        filters.append(Job.is_active == True)
 
     if q:
         filters.append(
@@ -123,6 +128,8 @@ async def list_jobs(
         filters.append(Job.location.ilike(f"%{location}%"))
     if min_salary is not None:
         filters.append(Job.salary_min >= min_salary)
+    if recruiter_id:
+        filters.append(Job.recruiter_id == recruiter_id)
 
     # Count total
     count_stmt = select(func.count()).select_from(Job).where(and_(*filters))
@@ -132,17 +139,34 @@ async def list_jobs(
     # Fetch page
     offset = (page - 1) * limit
     stmt = (
-        select(Job)
+        select(
+            Job,
+            func.count(Application.id).label("application_count"),
+            func.sum(case((Application.status == "hired", 1), else_=0)).label("hired_count"),
+            func.sum(case((Application.status == "rejected", 1), else_=0)).label("rejected_count"),
+            func.sum(case((Application.status == "interview", 1), else_=0)).label("interview_count"),
+        )
+        .outerjoin(Application, Application.job_id == Job.id)
         .where(and_(*filters))
+        .group_by(Job.id)
         .order_by(Job.created_at.desc())
         .offset(offset)
         .limit(limit)
     )
     result = await db.execute(stmt)
-    jobs = result.scalars().all()
+    rows = result.all()
+
+    items = []
+    for row in rows:
+        j_resp = JobResponse.model_validate(row.Job)
+        j_resp.application_count = row.application_count or 0
+        j_resp.hired_count = row.hired_count or 0
+        j_resp.rejected_count = row.rejected_count or 0
+        j_resp.interview_count = row.interview_count or 0
+        items.append(j_resp)
 
     response = JobListResponse(
-        items=[JobResponse.model_validate(j) for j in jobs],
+        items=items,
         total=total,
         page=page,
         limit=limit,
