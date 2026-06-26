@@ -35,6 +35,10 @@ export interface CandidateApp {
     email: string;
     id: string;
   };
+  job?: {
+    title: string;
+    [key: string]: any;
+  };
 }
 
 type SortKey = "overall_score" | "experience_score" | "skills_score";
