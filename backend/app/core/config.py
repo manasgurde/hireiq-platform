@@ -2,6 +2,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
 
+from pydantic import field_validator
+
 class Settings(BaseSettings):
     PROJECT_NAME: str = "HireIQ"
     VERSION: str = "2.0.0"
@@ -11,6 +13,16 @@ class Settings(BaseSettings):
     # Direct (non-pooled) URL for Alembic migrations (bypasses pgbouncer)
     # On Supabase: use port 5432 (direct), not 6543 (pooler)
     DIRECT_DATABASE_URL: Optional[str] = None
+
+    @field_validator("DATABASE_URL", "DIRECT_DATABASE_URL", mode="before")
+    @classmethod
+    def assemble_db_connection(cls, v: Optional[str]) -> Optional[str]:
+        if isinstance(v, str):
+            if v.startswith("postgres://"):
+                return v.replace("postgres://", "postgresql+asyncpg://", 1)
+            elif v.startswith("postgresql://"):
+                return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
