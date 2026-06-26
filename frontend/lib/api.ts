@@ -185,6 +185,10 @@ export interface Job {
   is_active: boolean
   recruiter_id: string
   application_count?: number
+  job_type?: string
+  work_setting?: string
+  start_date?: string
+  end_date?: string
   created_at: string
   updated_at: string
 }
