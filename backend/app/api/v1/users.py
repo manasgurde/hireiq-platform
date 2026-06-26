@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.core.s3 import upload_avatar
+from app.models.file_storage import FileRecord
 from app.models.user import User
 from app.models.profile import Profile
 from app.schemas.user import ProfileUpdate, ProfileResponse
@@ -87,12 +87,30 @@ async def upload_user_avatar(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> ProfileResponse:
-    # Upload the file to S3 and get back the public URL
-    avatar_url = await upload_avatar(file, current_user.id)
+    """Upload avatar, store raw bytes in PostgreSQL, save URL reference in profile."""
+    allowed = {"image/jpeg", "image/png", "image/webp"}
+    content_type = file.content_type or ""
+    if content_type not in allowed:
+        from fastapi import status as s
+        raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail="Only JPEG, PNG, or WebP images allowed.")
 
-    # Update the user's profile avatar URL
+    file_data = await file.read()
+    if len(file_data) > 2 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image must be under 2 MB.")
+
+    import uuid
+    record = FileRecord(
+        id=uuid.uuid4(),
+        filename=file.filename or "avatar.jpg",
+        content_type=content_type,
+        file_data=file_data,
+        file_size=len(file_data),
+    )
+    db.add(record)
+    await db.flush()
+
     profile = await _get_or_create_profile(current_user, db)
-    profile.avatar_url = avatar_url
+    profile.avatar_url = f"/v1/files/{record.id}"
 
     await db.commit()
     await db.refresh(profile)

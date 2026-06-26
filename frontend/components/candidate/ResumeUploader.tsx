@@ -30,50 +30,30 @@ export default function ResumeUploader({ onUploadSuccess }: Props = {}) {
     setStatus("uploading");
     setErrorMsg(null);
     setTimeLeft(60);
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 1 minute timeout
+
     const intervalId = setInterval(() => {
-      setTimeLeft((prev) => prev > 0 ? prev - 1 : 0);
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
-    
+
     try {
-      // 1. Get presigned URL from core API
-      const { default: api } = await import('@/lib/api');
-      
-      const presignRes = await api.post('/v1/resumes/upload-url', undefined, {
-        signal: controller.signal
-      });
-      const { upload_url, s3_key } = presignRes.data;
+      const { default: api } = await import("@/lib/api");
 
-      // 2. Upload to S3 directly
-      const s3Res = await fetch(upload_url, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-        signal: controller.signal
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await api.post("/v1/resumes/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      if (!s3Res.ok) throw new Error("Failed to upload to S3");
-
-      // 3. Confirm with core API
-      const confirmRes = await api.post('/v1/resumes/confirm', { s3_key }, {
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
       clearInterval(intervalId);
       setStatus("success");
-      if (onUploadSuccess) onUploadSuccess(confirmRes.data);
+      if (onUploadSuccess) onUploadSuccess(res.data);
     } catch (err: any) {
-      clearTimeout(timeoutId);
       clearInterval(intervalId);
       console.error("Upload error", err);
-      
-      if (err.name === 'AbortError' || err.name === 'CanceledError' || err.code === 'ECONNABORTED') {
-        setErrorMsg("Upload timed out after 1 minute. Please try again.");
-      } else if (err.response?.data?.error?.message || err.response?.data?.error?.detail) {
-        setErrorMsg(err.response.data.error.message || err.response.data.error.detail);
+
+      if (err.response?.data?.detail) {
+        setErrorMsg(err.response.data.detail);
       } else {
         setErrorMsg(err.message || "An unknown error occurred.");
       }

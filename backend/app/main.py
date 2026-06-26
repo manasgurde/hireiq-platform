@@ -22,6 +22,7 @@ from app.api.v1.billing import router as billing_router
 from app.api.v1.audit import router as audit_router
 from app.api.v1.analytics import router as analytics_router
 from app.api.v1.ml_ops import router as ml_ops_router
+from app.api.v1.files import router as files_router
 
 
 
@@ -159,5 +160,6 @@ app.include_router(billing_router, prefix="/v1")
 app.include_router(audit_router, prefix="/v1")
 app.include_router(analytics_router, prefix="/v1")
 app.include_router(ml_ops_router, prefix="/v1")
+app.include_router(files_router, prefix="/v1")
 
 

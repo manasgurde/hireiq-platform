@@ -9,6 +9,7 @@ from app.models.notification import Notification, NotificationPreference
 from app.models.subscription import Subscription, Invoice
 from app.models.audit import AuditLog
 from app.models.ml_ops import ModelVersion, FeatureSnapshot, ModelFeedback
+from app.models.file_storage import FileRecord
 
 __all__ = [
     "User", "Base", "Profile", "Job", "Resume", "Application",
@@ -17,5 +18,6 @@ __all__ = [
     "Notification", "NotificationPreference",
     "Subscription", "Invoice",
     "AuditLog",
-    "ModelVersion", "FeatureSnapshot", "ModelFeedback"
+    "ModelVersion", "FeatureSnapshot", "ModelFeedback",
+    "FileRecord",
 ]

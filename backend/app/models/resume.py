@@ -19,7 +19,14 @@ class Resume(Base):
         unique=True,
         nullable=False,
     )
-    s3_key: Mapped[str] = mapped_column(String(512), nullable=False)
+    # Keep s3_key as optional for backwards compatibility
+    s3_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # New: stores reference to FileRecord (PostgreSQL binary storage)
+    file_record_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("file_records.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     raw_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     ai_evaluation: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
