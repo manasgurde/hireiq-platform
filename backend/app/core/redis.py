@@ -11,7 +11,25 @@ REUSE_GRACE_TTL = 60        # 60 seconds grace period for reuse detection
 
 async def init_redis_pool():
     global redis_client
-    redis_client = None # Disabled Redis for local testing without Docker
+    try:
+        redis_client = redis.Redis.from_url(
+            settings.REDIS_URL,
+            encoding="utf-8",
+            decode_responses=True,
+            socket_connect_timeout=3,
+        )
+        # Test the connection
+        await redis_client.ping()
+        import structlog
+        structlog.get_logger(__name__).info("redis_connected", url=settings.REDIS_URL)
+    except Exception as e:
+        import structlog
+        structlog.get_logger(__name__).warning(
+            "redis_unavailable",
+            error=str(e),
+            note="App will run without Redis (token rotation disabled)"
+        )
+        redis_client = None
 
 async def get_redis():
     return redis_client

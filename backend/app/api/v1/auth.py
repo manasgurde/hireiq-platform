@@ -32,12 +32,15 @@ REFRESH_COOKIE_MAX_AGE = 7 * 24 * 3600  # 7 days
 
 def _set_refresh_cookie(response: Response, token: str) -> None:
     """Set the httpOnly refresh token cookie."""
+    # In production (HTTPS), we need secure=True and samesite='none' for
+    # cross-origin cookie sharing between Vercel frontend and Render backend
+    is_production = settings.FRONTEND_URL.startswith("https://")
     response.set_cookie(
         key=REFRESH_COOKIE_NAME,
         value=token,
         httponly=True,
-        secure=False,    # Set to True in production with HTTPS
-        samesite="strict",
+        secure=is_production,
+        samesite="none" if is_production else "strict",
         path="/v1/auth/refresh",
         max_age=REFRESH_COOKIE_MAX_AGE,
     )
@@ -45,11 +48,13 @@ def _set_refresh_cookie(response: Response, token: str) -> None:
 
 def _clear_refresh_cookie(response: Response) -> None:
     """Clear the refresh token cookie on logout."""
+    is_production = settings.FRONTEND_URL.startswith("https://")
     response.delete_cookie(
         key=REFRESH_COOKIE_NAME,
         path="/v1/auth/refresh",
         httponly=True,
-        samesite="strict",
+        secure=is_production,
+        samesite="none" if is_production else "strict",
     )
 
 
