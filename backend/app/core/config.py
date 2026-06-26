@@ -33,11 +33,13 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     FRONTEND_URL: str = "http://localhost:3000"
 
-    # AWS / S3
+    # AWS / S3 (or Cloudflare R2)
     AWS_ACCESS_KEY_ID: Optional[str] = None
     AWS_SECRET_ACCESS_KEY: Optional[str] = None
     AWS_REGION: str = "us-east-1"
     S3_BUCKET_NAME: Optional[str] = "dummy-bucket"
+    S3_ENDPOINT_URL: Optional[str] = None
+    S3_PUBLIC_URL_PREFIX: Optional[str] = None
 
     # ── Phase 7: Vector Search ─────────────────────────────────────────────
     GEMINI_API_KEY: Optional[str] = None

@@ -24,7 +24,7 @@ _s3_session = aioboto3.Session(
 async def get_s3_client():
     """Context manager that yields an async S3 client."""
     s3_config = Config(signature_version="s3v4")
-    endpoint = f"https://s3.{settings.AWS_REGION}.amazonaws.com" if settings.AWS_REGION else None
+    endpoint = settings.S3_ENDPOINT_URL or (f"https://s3.{settings.AWS_REGION}.amazonaws.com" if settings.AWS_REGION else None)
     async with _s3_session.client("s3", config=s3_config, endpoint_url=endpoint) as client:
         yield client
 
@@ -89,6 +89,8 @@ async def upload_avatar(file: UploadFile, user_id: uuid.UUID) -> str:
         ) from exc
 
     # Return the public URL
+    if settings.S3_PUBLIC_URL_PREFIX:
+        return f"{settings.S3_PUBLIC_URL_PREFIX.rstrip('/')}/{s3_key}"
     return f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
 
 
