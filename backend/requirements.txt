@@ -25,3 +25,7 @@ pgvector==0.3.2
 
 # Phase 14: MLflow
 mlflow==2.13.2
+
+# Phase 15: Production Dependencies
+psycopg2-binary>=2.9.9
+google-genai>=0.3.0
