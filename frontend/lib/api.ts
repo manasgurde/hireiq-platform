@@ -104,7 +104,7 @@ export interface LoginRequest {
 export interface UserOut {
   id: string
   email: string
-  role: string
+  role: 'candidate' | 'recruiter' | 'admin'
   created_at: string
 }
 
