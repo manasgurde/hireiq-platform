@@ -50,48 +50,40 @@ export default function Page() {
   const performUpload = async (file: File) => {
     setError(null);
     setUploadState("uploading");
-    setProgress(10);
-    
+    setProgress(20);
+
     try {
-      // 1. Get presigned URL
-      const urlRes = await resumesApi.getUploadUrl();
-      const { upload_url, s3_key } = urlRes.data as { upload_url: string, s3_key: string };
-      setProgress(30);
+      const formData = new FormData();
+      formData.append("file", file);
 
-      // 2. Upload to S3 directly (using fetch to avoid axios interceptors attaching auth tokens)
-      const s3Res = await fetch(upload_url, {
-        method: "PUT",
-        body: file,
-        headers: {
-          "Content-Type": file.type,
-        },
-      });
-
-      if (!s3Res.ok) {
-        throw new Error("Failed to upload file to S3.");
-      }
-      setProgress(60);
+      // Single-step upload: backend parses PDF and stores bytes in PostgreSQL
+      setProgress(50);
       setUploadState("analyzing");
 
-      // 3. Confirm upload & trigger AI parsing
-      await resumesApi.confirmUpload(s3_key);
-      
-      setProgress(85);
-      
-      // 4. Call Evaluate to get AI extraction (name, skills, rating)
-      const evaluateRes = await resumesApi.evaluate();
+      const uploadRes = await resumesApi.upload(formData);
+      setProgress(80);
+
+      // Optionally call evaluate to get AI extraction (name, skills, rating)
+      try {
+        const evaluateRes = await resumesApi.evaluate();
+        setResume(evaluateRes.data);
+      } catch {
+        // evaluate might fail if Gemini isn't configured — still show uploaded resume
+        setResume(uploadRes.data);
+      }
+
       setProgress(100);
-      setResume(evaluateRes.data);
-      
       setTimeout(() => setUploadState("complete"), 500);
 
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "An error occurred during upload.");
+      const msg = err.response?.data?.detail || err.message || "An error occurred during upload.";
+      setError(msg);
       setUploadState("idle");
       setProgress(0);
     }
   };
+
 
   const deleteResume = async () => {
     if (!confirm("Are you sure you want to delete your resume?")) return;

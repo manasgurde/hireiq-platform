@@ -145,8 +145,11 @@ export interface Resume {
 }
 
 export const resumesApi = {
-  getUploadUrl: () => api.post('/v1/resumes/upload-url'),
-  confirmUpload: (s3_key: string) => api.post('/v1/resumes/confirm', { s3_key }),
+  // Single-step upload: sends FormData with PDF, backend parses and stores in PostgreSQL
+  upload: (formData: FormData) =>
+    api.post<Resume>('/v1/resumes/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   getMine: () => api.get<Resume>('/v1/resumes/me'),
   evaluate: () => api.post<Resume>('/v1/resumes/me/evaluate'),
   delete: () => api.delete('/v1/resumes/me'),
