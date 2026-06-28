@@ -154,7 +154,7 @@ RESUME TEXT:
 {resume.raw_text[:8000]}"""
 
         response = client.models.generate_content(
-            model="gemini-1.5-pro",
+            model="gemini-1.5-flash-8b",
             contents=prompt,
         )
         raw = response.text.strip()
@@ -167,13 +167,24 @@ RESUME TEXT:
     except Exception as exc:
         import traceback
         traceback.print_exc()
+        
+        # Try to list available models to figure out the issue
+        available_models = []
+        try:
+            from google import genai
+            from app.core.config import settings
+            c = genai.Client(api_key=settings.GEMINI_API_KEY)
+            available_models = [m.name for m in c.models.list()]
+        except:
+            pass
+        
         # Fallback if Gemini fails: return minimal evaluation without crashing
         evaluation = {
             "rating": 50,
             "candidate_name": "Unknown",
             "extracted_skills": [],
             "good_points": ["Resume uploaded successfully"],
-            "bad_points": [f"AI evaluation unavailable: {str(exc)}"],
+            "bad_points": [f"AI evaluation unavailable: {str(exc)} | Models: {available_models}"],
             "suggestions": ["Try again later"],
         }
 
