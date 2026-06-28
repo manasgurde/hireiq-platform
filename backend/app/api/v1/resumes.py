@@ -165,13 +165,15 @@ RESUME TEXT:
                 raw = raw[4:]
         evaluation = json.loads(raw.strip())
     except Exception as exc:
+        import traceback
+        traceback.print_exc()
         # Fallback if Gemini fails: return minimal evaluation without crashing
         evaluation = {
             "rating": 50,
             "candidate_name": "Unknown",
             "extracted_skills": [],
             "good_points": ["Resume uploaded successfully"],
-            "bad_points": ["AI evaluation unavailable"],
+            "bad_points": [f"AI evaluation unavailable: {str(exc)}"],
             "suggestions": ["Try again later"],
         }
 

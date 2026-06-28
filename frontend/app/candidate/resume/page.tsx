@@ -234,7 +234,7 @@ export default function Page() {
                   </div>
                   <div className="flex justify-between items-center py-1">
                     <span className="font-caption text-caption text-on-surface-variant uppercase tracking-wider">Original File</span>
-                    <a href={resume?.s3_url || "#"} target="_blank" rel="noreferrer" className="font-body-base text-body-base text-tertiary font-medium hover:underline flex items-center gap-1">
+                    <a href={resume?.s3_url?.startsWith('/') ? `${process.env.NEXT_PUBLIC_API_URL}${resume.s3_url}` : (resume?.s3_url || "#")} target="_blank" rel="noreferrer" className="font-body-base text-body-base text-tertiary font-medium hover:underline flex items-center gap-1">
                       View PDF <span className="material-symbols-outlined text-[16px]">open_in_new</span>
                     </a>
                   </div>
