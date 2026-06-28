@@ -154,7 +154,7 @@ RESUME TEXT:
 {resume.raw_text[:8000]}"""
 
         response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",
+            model="gemini-flash-latest",
             contents=prompt,
         )
         raw = response.text.strip()
