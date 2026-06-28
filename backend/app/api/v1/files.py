@@ -1,4 +1,4 @@
-﻿import uuid
+import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,7 +16,6 @@ router = APIRouter(prefix="/files", tags=["Files"])
 async def serve_file(
     file_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ) -> Response:
     """Serve a stored file from PostgreSQL as a binary response."""
     result = await db.execute(select(FileRecord).where(FileRecord.id == file_id))
