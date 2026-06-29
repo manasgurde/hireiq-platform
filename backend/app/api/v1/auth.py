@@ -153,11 +153,8 @@ async def google_login(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> AuthResponse:
-    if not settings.GOOGLE_CLIENT_ID:
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Google Sign-In is not configured on the server."
-        )
+    # We don't strictly need GOOGLE_CLIENT_ID on the backend because we verify
+    # the access token against the userinfo endpoint directly.
 
     try:
         import httpx
@@ -192,7 +189,7 @@ async def google_login(
         user = User(
             email=email,
             password_hash=hashed_pwd,
-            role=body.role,
+            role=body.role or "candidate",
             full_name=idinfo.get("name")
         )
         db.add(user)
