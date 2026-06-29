@@ -2,7 +2,7 @@ import uuid
 from typing import List
 # pyrefly: ignore [missing-import]
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, and_, update
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -161,7 +161,6 @@ async def get_all_recruiter_applications(
     db: AsyncSession = Depends(get_db),
 ) -> List[ApplicationResponse]:
     from app.models.user import User
-    from app.models.profile import Profile
     stmt = (
         select(Application)
         .join(Job, Application.job_id == Job.id)

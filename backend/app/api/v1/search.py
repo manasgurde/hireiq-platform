@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_recruiter
-from app.core.embeddings import get_embedding, build_job_text, build_profile_text
+from app.core.embeddings import get_embedding
 from app.models.user import User
 
 router = APIRouter(prefix="/search", tags=["Search"])

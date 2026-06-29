@@ -4,14 +4,13 @@ Hiring funnel, time-to-hire, recruiter performance, and platform usage metrics.
 """
 from __future__ import annotations
 
-from typing import Any
 
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select, func, text
+from fastapi import APIRouter, Depends
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import get_current_user, require_recruiter, require_admin
+from app.core.deps import require_recruiter, require_admin
 from app.models.user import User
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])

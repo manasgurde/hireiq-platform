@@ -5,8 +5,7 @@ Usage:
 """
 from __future__ import annotations
 
-import uuid
-from typing import Optional, Any
+from typing import Optional
 
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession

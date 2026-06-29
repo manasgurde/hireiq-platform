@@ -1,5 +1,5 @@
 import time
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import HTTPException, Request, status
 from app.core.redis import redis_client
 
 # ---------------------------------------------------------------------------

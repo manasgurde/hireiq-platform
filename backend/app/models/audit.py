@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from sqlalchemy import String, DateTime, ForeignKey, func, Text
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB, INET
+from sqlalchemy import String, DateTime, ForeignKey, func
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from app.models.user import Base
 

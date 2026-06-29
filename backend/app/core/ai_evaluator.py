@@ -1,10 +1,8 @@
-import os
 import json
 import structlog
 from google import genai
 from pydantic import BaseModel, Field
 from app.core.config import settings
-from pydantic import BaseModel, Field
 
 logger = structlog.get_logger(__name__)
 

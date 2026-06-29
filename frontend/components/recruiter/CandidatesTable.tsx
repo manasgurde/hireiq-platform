@@ -102,9 +102,9 @@ export default function CandidatesTable({ jobId }: { jobId: string }) {
   });
 
   useEffect(() => {
-    setLoading(true);
     async function fetch_() {
       if (!jobId) return;
+      setLoading(true);
       try {
         const res = await applicationsApi.listByJob(jobId);
         setCandidates(res.data || []);

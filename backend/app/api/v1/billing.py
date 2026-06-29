@@ -3,7 +3,6 @@ Phase 11 — Billing API (Stripe)
 """
 from __future__ import annotations
 
-import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Header
@@ -18,7 +17,7 @@ from app.core.stripe_client import (
     create_portal_session, list_invoices, construct_webhook_event,
 )
 from app.core.config import settings
-from app.models.subscription import Subscription, Invoice
+from app.models.subscription import Subscription
 from app.models.user import User
 
 router = APIRouter(prefix="/billing", tags=["Billing"])

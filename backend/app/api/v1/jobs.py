@@ -9,13 +9,13 @@ from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import get_current_user, require_recruiter
+from app.core.deps import require_recruiter
 from app.core.redis import redis_client
 from app.models.job import Job
 from app.models.application import Application
 from app.models.user import User
 from app.schemas.job import JobCreate, JobUpdate, JobResponse, JobListResponse
-from sqlalchemy import select, func, and_, case
+from sqlalchemy import case
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 

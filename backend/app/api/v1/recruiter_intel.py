@@ -7,16 +7,16 @@ from __future__ import annotations
 import uuid
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import get_current_user, require_recruiter
+from app.core.deps import require_recruiter
 from app.models.recruiter_intel import (
     Bookmark, SavedSearch, TalentPool, TalentPoolMember,
-    RecruiterNote, RecruiterCollaboration,
+    RecruiterNote,
 )
 from app.models.user import User
 

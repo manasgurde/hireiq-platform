@@ -1,4 +1,3 @@
-import json
 import httpx
 import structlog
 from redis.asyncio import Redis

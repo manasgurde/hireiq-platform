@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_admin
 from app.core.config import settings
-from app.models.ml_ops import ModelVersion, FeatureSnapshot, ModelFeedback
+from app.models.ml_ops import ModelVersion, ModelFeedback
 from app.models.user import User
 
 router = APIRouter(prefix="/ml", tags=["ML Operations"])

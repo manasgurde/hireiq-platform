@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Dict, Any, Optional
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class ResumeUploadUrlResponse(BaseModel):
